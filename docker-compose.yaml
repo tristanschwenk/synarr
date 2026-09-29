@@ -163,7 +163,7 @@ services:
   # --- HUB ---
   hub:
     build: ./hub
-    container_name: casastreaming
+    container_name: synarr-hub
     environment:
       - BETTER_AUTH_SECRET=dlkfjgblksjnclkjfdgndflkjgndflkjfnlkzgnerlkjgndkjn
       - BETTER_AUTH_URL=http://localhost

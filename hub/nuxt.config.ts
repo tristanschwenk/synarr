@@ -2,11 +2,11 @@
 export default defineNuxtConfig({
   app: {
     head: {
-      title: 'casaStreaming',
+      title: 'Synarr',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'description', content: 'A hub for all your streaming apps' },
+        { name: 'description', content: 'Unified dashboard and hub for your Servarr and streaming stack' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
       ]
@@ -21,8 +21,8 @@ export default defineNuxtConfig({
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
-      name: 'casaStreaming',
-      short_name: 'casaStreaming',
+      name: 'Synarr',
+      short_name: 'Synarr',
       theme_color: '#0f172a',
       background_color: '#0f172a',
       display: 'standalone',

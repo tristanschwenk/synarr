@@ -2,7 +2,7 @@
   <!-- Welcome: service card grid when modules are active -->
   <div v-if="activeModules.length > 0" class="welcome-page">
     <header class="welcome-header">
-      <h1 class="welcome-greeting">Good evening, <span>casaStreaming</span></h1>
+      <h1 class="welcome-greeting">Good evening, <span>Synarr</span></h1>
       <p class="welcome-sub">{{ activeModules.length }} service{{ activeModules.length !== 1 ? 's' : '' }} available — select one to launch.</p>
     </header>
 

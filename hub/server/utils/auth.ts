@@ -80,7 +80,7 @@ export const auth = betterAuth({
     plugins: [
         twoFactor({
             otpOptions: {
-                appName: "casaStreaming"
+                appName: "Synarr"
             }
         })
     ],

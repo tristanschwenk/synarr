@@ -7,7 +7,7 @@
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
         </div>
-        <h1>casaStreaming</h1>
+        <h1>Synarr</h1>
         <p class="subtitle">{{ step === 1 ? 'Sign in to your media hub' : 'Enter your 6-digit OTP code' }}</p>
       </div>
 

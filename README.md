@@ -1,101 +1,190 @@
-# 🛡️ Home Media Server (VPN Secured)
+# ⚡ Synarr
 
-This repository contains the configuration for a fully automated, VPN-secured media center. It uses the **Servarr** suite to find, download, and organize movies and TV shows.
+<p align="center">
+  <strong>The Turnkey, VPN-Secured <code>*arr</code> & Media Streaming Suite with Unified Authentication Hub</strong>
+</p>
 
----
-
-## 🏗️ Global Architecture
-
-The setup follows the **"Sidecar VPN"** design. All traffic-sensitive containers (Downloaders and Managers) are routed through a single VPN tunnel.
-
-### 🧩 Services Breakdown
-
-| Service           | Role                                            | Network                |
-| :---------------- | :---------------------------------------------- | :--------------------- |
-| **Gluetun (VPN)** | The Gateway. Establishes the encrypted tunnel.  | Direct (Exposes ports) |
-| **Transmission**  | The Downloader. Handles P2P traffic.            | Routed via VPN         |
-| **Prowlarr**      | The Indexer Manager. Connects to torrent sites. | Routed via VPN         |
-| **Radarr**        | Movie Manager. Searches and organizes movies.   | Routed via VPN         |
-| **Sonarr**        | TV Show Manager. Searches and organizes series. | Routed via VPN         |
-| **Jellyfin**      | The Media Player. Streams your library.         | Local / Direct         |
+<p align="center">
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Nuxt_3-Hub-00DC82?style=flat&logo=nuxtdotjs&logoColor=white" alt="Nuxt 3" />
+  <img src="https://img.shields.io/badge/Gluetun-VPN_Sidecar-009688?style=flat&logo=wireguard&logoColor=white" alt="VPN" />
+  <img src="https://img.shields.io/badge/Caddy-Forward_Auth-1F88C0?style=flat&logo=caddy&logoColor=white" alt="Caddy" />
+  <img src="https://img.shields.io/badge/Jellyfin-Streaming-00A4DC?style=flat&logo=jellyfin&logoColor=white" alt="Jellyfin" />
+</p>
 
 ---
 
-## 📂 Folder Structure & Hardlinks
+**Synarr** is a production-ready, fully automated, self-hosted media center. It brings together the complete **Servarr** ecosystem (`Radarr`, `Sonarr`, `Prowlarr`, `Bazarr`, `Overseerr/Seerr`), a torrent client (`Transmission`), an analytics engine (`Jellystat`), and a streaming server (`Jellyfin`), all unified behind a **custom Nuxt-powered SSO Hub with 2FA** and secured via a **Gluetun VPN Sidecar**.
 
-To avoid double disk usage and ensure instant file moves, we use a **Single Root Dataset** (`/data`).
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TB
+    subgraph WAN [Internet / External]
+        Client[User Browser / App]
+        Trackers[Trackers & Indexers]
+        Peers[Torrent Swarm]
+    end
+
+    subgraph SynarrHost [Synarr Server]
+        Proxy[Caddy Reverse Proxy :80]
+        Hub[Synarr Nuxt Hub + Better Auth :3000]
+
+        subgraph VPNSidecar [Gluetun VPN Gateway Container]
+            VPN[Gluetun WireGuard/OpenVPN]
+            Transmission[Transmission]
+            Prowlarr[Prowlarr]
+            Radarr[Radarr]
+            Sonarr[Sonarr]
+            Bazarr[Bazarr]
+        end
+
+        subgraph LocalNetwork [Direct Host Network]
+            Jellyfin[Jellyfin Media Server]
+            Seerr[Jellyseerr / Seerr]
+            Jellystat[Jellystat Analytics]
+        end
+
+        Storage[(Root Dataset: /data)]
+    end
+
+    Client --> Proxy
+    Proxy -->|Forward Auth Verification| Hub
+    Proxy -->|Authorized Traffic| Hub
+    Proxy -->|Authorized Traffic| VPNSidecar
+    Proxy -->|Authorized Traffic| LocalNetwork
+
+    Transmission -.-> Storage
+    Radarr -.-> Storage
+    Sonarr -.-> Storage
+    Jellyfin -.-> Storage
+
+    VPNSidecar -->|Encrypted Tunnel| Trackers
+    VPNSidecar -->|Encrypted Tunnel| Peers
+```
+
+### Key Highlights
+
+* 🛡️ **Sidecar VPN Gateway**: All acquisition and indexer containers share the network stack of Gluetun (`network_mode: "container:vpn"`). If the VPN drops, all torrent/search traffic immediately halts (built-in killswitch).
+* 🔐 **Unified Authentication (SSO)**: Every `*arr` web UI is guarded behind Caddy `forward_auth` powered by the **Synarr Hub** (built with Nuxt 3, Better-Auth, and 2FA / TOTP support).
+* ⚡ **Atomic Hardlinks**: A unified single-root dataset (`/data`) allows instant, zero-duplicate moves between downloading (`torrents/`) and your organized streaming library (`media/`).
+* 📱 **Progressive Web App (PWA)**: Access and switch between all services on desktop or mobile through the unified Synarr interface.
+
+---
+
+## 🧩 Included Services
+
+| Service | Role | Network Mode |
+| :--- | :--- | :--- |
+| **Gluetun** | VPN gateway & encrypted killswitch tunnel | Direct (Exposes web ports) |
+| **Transmission** | BitTorrent downloader | Routed via VPN sidecar |
+| **Prowlarr** | Torrent indexer & tracker manager | Routed via VPN sidecar |
+| **Radarr** | Movie library automation & manager | Routed via VPN sidecar |
+| **Sonarr** | TV show series automation & manager | Routed via VPN sidecar |
+| **Bazarr** | Subtitle downloader & manager | Routed via VPN sidecar |
+| **Seerr** | Media discovery & request manager | Host / Direct |
+| **Jellyfin** | Personal media player & streaming server | Host / Direct |
+| **Jellystat** | Jellyfin analytics & watch statistics | Host / Direct |
+| **Synarr Hub** | Unified dashboard, module launcher & 2FA Auth | Host / Direct |
+| **Caddy** | Reverse proxy with SSO forward-authentication | Host / Direct |
+
+---
+
+## 📂 Storage Structure & Hardlinks
+
+To avoid wasting disk space and eliminate slow file copies across filesystems, Synarr uses a **Single Root Dataset** (`/data`):
 
 ```text
 data/
-├── torrents/       # In-progress and seeding files
+├── torrents/                  # In-progress & seeding files
 │   ├── movies/
 │   └── tv/
-└── media/          # Organized library (Jellyfin source)
+└── media/                     # Formatted library (Jellyfin source)
     ├── movies/
     └── tv/
-docker-config/      # Persistence for app settings
+docker-config/                 # Persistent service configurations
     ├── vpn/
     ├── transmission/
     ├── radarr/
     ├── sonarr/
-    └── prowlarr/
+    ├── prowlarr/
+    ├── bazarr/
+    ├── seerr/
+    └── hub/
 ```
 
-**Pro-Tip**: By mounting ./data:/data in every container, Radarr/Sonarr can perform Hardlinks.
-This means a file exists in both torrents/ and media/ simultaneously without taking extra space.
+> [!TIP]
+> Because `./data` is mounted to `/data` across all containers, Radarr and Sonarr create **hardlinks** from `torrents/` to `media/`. Files remain seeding without taking twice the disk space.
 
-## 🚀 Getting Started
+---
 
-### 1. Create the directories
+## 🚀 Quick Start
 
-Run these commands in your terminal to prepare the environment:
+### 1. Clone the repository
 
+```bash
+git clone https://github.com/<your-username>/synarr.git
+cd synarr
 ```
-mkdir -p data/torrents/{movies,tv}
-mkdir -p data/media/{movies,tv}
-mkdir -p docker-config/{vpn,transmission,radarr,sonarr,prowlarr}
+
+### 2. Prepare directories
+
+Create required persistent data and configuration directories:
+
+```bash
+chmod +x ./bin/create-folder-structure.sh
+./bin/create-folder-structure.sh
 ```
 
-### 2. Add your VPN Config
+### 3. Configure your VPN
 
-Place your ClearVPN (or other) .ovpn file inside docker-config/vpn/ and rename it to client.conf.
+Place your OpenVPN (`client.conf` or `.ovpn`) or WireGuard configuration inside:
 
-### 3. Deploy
-
-Launch the stack:
-
+```text
+docker-config/vpn/
 ```
+
+*(Refer to [Gluetun documentation](https://github.com/qdm12/gluetun-wiki) for provider-specific environment variables in `docker-compose.yaml` if needed).*
+
+### 4. Deploy
+
+```bash
 docker compose up -d
 ```
 
-## 📡 Access & Ports
+---
 
-All management interfaces are accessible via your server's local IP (e.g., 192.168.1.50).
+## 📡 Accessing Services
 
-| Service          | URL              | Note                                    |
-| ---------------- | ---------------- | --------------------------------------- |
-| **Transmission** | http://<IP>:9091 | Change "Download to" to /data/torrents  |
-| **Prowlarr**     | http://<IP>:9696 | Add Indexers here first                 |
-| **Radarr**       | http://<IP>:7878 | Link to Transmission via localhost:9091 |
-| **Sonarr**       | http://<IP>:8989 | Link to Transmission via localhost:9091 |
-| **Jellyfin**     | http://<IP>:8096 | Point libraries to /data/media          |
-| **Jellystat**    | http://<IP>:3001 | Get stats about your media              |
-| **Seerr**        | http://<IP>:5055 | Request media from the managers         |
-| **Bazarr**       | http://<IP>:6767 | Subtitles manager                       |
+Once deployed, access the **Synarr Hub** at `http://<your-server-ip>`:
 
-## 🔧 Internal Communication
+* **Initial Setup**: Navigate to `http://<your-server-ip>/register` to create your single admin account and enable 2FA / OTP.
+* **Unified Hub**: After signing in, you can access all services directly through the sidebar launcher or at their individual sub-paths:
+  * `/radarr` — Movies
+  * `/sonarr` — Series
+  * `/prowlarr` — Indexers
+  * `/transmission` — BitTorrent Client
+  * `/bazarr` — Subtitles
+  * `/seerr` — Requests
+  * `/jellystat` — Stats
+  * `http://<your-server-ip>:8096` — Jellyfin Direct Streaming
 
-Because most services use network_mode: "container:vpn", they share the same network stack. When linking them together in their web interfaces:
+---
 
-- **Host**: Use localhost (not the server IP).
-- **Port**: Use the standard port (e.g., 9091 for Transmission).
+## 🛡️ Killswitch Verification
 
-## 🛡️ Killswitch Check
+To ensure your downloader traffic is fully routed through the VPN tunnel and not leaking your real ISP address:
 
-To ensure your traffic is actually hidden, run:
-
-```
+```bash
 docker exec transmission curl https://ifconfig.me
 ```
 
-_The result should be your VPN's IP address, not your home ISP's IP._
+*The returned IP address must match your VPN provider's exit node, not your home IP.*
+
+---
+
+## 📜 License
+
+Distributed under the [MIT License](LICENSE).

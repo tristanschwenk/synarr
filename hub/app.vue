@@ -10,7 +10,7 @@
           </svg>
         </div>
         <div class="sidebar-brand">
-          <span class="sidebar-brand-name">casaStreaming</span>
+          <span class="sidebar-brand-name">Synarr</span>
           <span class="sidebar-brand-sub">Media Hub</span>
         </div>
       </div>
@@ -58,7 +58,7 @@
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
         </div>
-        <span class="mobile-header-title">casaStreaming</span>
+        <span class="mobile-header-title">Synarr</span>
       </div>
     </header>
 
