@@ -1,0 +1,19 @@
+general:
+  adaptive_searching: true
+  base_url: ''
+  branch: master
+plex:
+  base_url: ''
+  port: 32400
+radarr:
+  apikey: fixture
+  base_url: ''
+  ip: 192.168.1.34
+  port: 7878
+sonarr:
+  apikey: fixture
+  base_url: ''
+  ip: 192.168.1.34
+  port: 8989
+subsarr:
+  base_url: ''

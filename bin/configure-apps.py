@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import os
 import xml.etree.ElementTree as ET
-import configparser
+import argparse
+import json
+import re
 
 def update_xml_config(filepath, url_base):
     print(f"Configuring {filepath}...")
@@ -48,38 +50,61 @@ def update_xml_config(filepath, url_base):
     except Exception as e:
         print(f"Failed to write config {filepath}: {e}")
 
-def update_ini_config(filepath, section, option, value):
-    print(f"Configuring {filepath}...")
-    dir_name = os.path.dirname(filepath)
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name, exist_ok=True)
+def update_bazarr_yaml(filepath):
+    """Set Bazarr's own base URL and the base URLs it uses to reach Radarr and Sonarr.
 
-    config = configparser.ConfigParser()
-    if os.path.exists(filepath):
-        config.read(filepath)
+    Line-based edit so every other line of config.yaml stays byte-for-byte (no PyYAML needed).
+    """
+    if not os.path.exists(filepath):
+        print(f"Skipping {filepath}: not found (start Bazarr once to create it)")
+        return
+    wanted = {"general": "/bazarr", "radarr": "/radarr", "sonarr": "/sonarr"}
+    section = None
+    lines = open(filepath).read().split("\n")
+    for i, line in enumerate(lines):
+        top = re.match(r"^([A-Za-z0-9_]+):\s*$", line)
+        if top:
+            section = top.group(1)
+        elif section in wanted and re.match(r"^  base_url:", line):
+            lines[i] = f"  base_url: {wanted[section]}"
+    with open(filepath, "w") as f:
+        f.write("\n".join(lines))
+    print(f"Successfully configured {filepath}")
 
-    if not config.has_section(section):
-        config.add_section(section)
-        
-    config.set(section, option, value)
 
-    try:
-        with open(filepath, 'w') as f:
-            config.write(f)
-        print(f"Successfully configured {filepath}")
-    except Exception as e:
-        print(f"Failed to write config {filepath}: {e}")
+def update_seerr_settings(filepath):
+    """Point Seerr's Radarr and Sonarr connections at their new URL bases."""
+    if not os.path.exists(filepath):
+        print(f"Skipping {filepath}: not found (set up Seerr first)")
+        return
+    with open(filepath) as f:
+        data = json.load(f)
+    for key, base in (("radarr", "/radarr"), ("sonarr", "/sonarr")):
+        for server in data.get(key, []):
+            server["baseUrl"] = base
+    with open(filepath, "w") as f:
+        json.dump(data, f, indent=1)
+    print(f"Successfully configured {filepath}")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Set URL bases for the Synarr tools. Stop radarr, sonarr, prowlarr, bazarr and seerr first."
+    )
+    parser.add_argument(
+        "--base-dir",
+        default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        help="Repo folder that contains docker-config/ (default: this script's repo)",
+    )
+    args = parser.parse_args(argv)
+    cfg = os.path.join(args.base_dir, "docker-config")
+
+    update_xml_config(os.path.join(cfg, "radarr", "config.xml"), "/radarr")
+    update_xml_config(os.path.join(cfg, "sonarr", "config.xml"), "/sonarr")
+    update_xml_config(os.path.join(cfg, "prowlarr", "config.xml"), "/prowlarr")
+    update_bazarr_yaml(os.path.join(cfg, "bazarr", "config", "config.yaml"))
+    update_seerr_settings(os.path.join(cfg, "seerr", "settings.json"))
+
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    
-    radarr_path = os.path.join(base_dir, "docker-config", "radarr", "config.xml")
-    sonarr_path = os.path.join(base_dir, "docker-config", "sonarr", "config.xml")
-    prowlarr_path = os.path.join(base_dir, "docker-config", "prowlarr", "config.xml")
-    bazarr_path = os.path.join(base_dir, "docker-config", "bazarr", "config.ini")
-
-    update_xml_config(radarr_path, "/radarr")
-    update_xml_config(sonarr_path, "/sonarr")
-    update_xml_config(prowlarr_path, "/prowlarr")
-    
-    update_ini_config(bazarr_path, "General", "base_url", "/bazarr")
+    main()

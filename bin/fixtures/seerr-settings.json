@@ -1,0 +1,22 @@
+{
+ "clientId": "fixture",
+ "radarr": [
+  {
+   "name": "Radarr",
+   "hostname": "100.82.243.124",
+   "port": 7878,
+   "apiKey": "fixture-radarr",
+   "useSsl": false
+  }
+ ],
+ "sonarr": [
+  {
+   "name": "Sonarr",
+   "hostname": "100.82.243.124",
+   "port": 8989,
+   "apiKey": "fixture-sonarr",
+   "useSsl": false,
+   "baseUrl": ""
+  }
+ ]
+}
