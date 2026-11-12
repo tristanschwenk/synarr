@@ -148,7 +148,18 @@ docker-config/vpn/
 
 *(Refer to [Gluetun documentation](https://github.com/qdm12/gluetun-wiki) for provider-specific environment variables in `docker-compose.yaml` if needed).*
 
-### 4. Deploy
+### 4. Set secrets
+
+Secrets (VPN credentials, database password, JWT and auth secrets) live in a gitignored `.env` file, not in `docker-compose.yaml`:
+
+```bash
+cp .env.example .env
+# fill in every value; generate secrets with: openssl rand -hex 32
+```
+
+`docker compose` refuses to start if a required variable is missing.
+
+### 5. Deploy
 
 ```bash
 docker compose up -d

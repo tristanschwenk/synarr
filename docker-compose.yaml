@@ -10,8 +10,8 @@ services:
     environment:
       - VPN_SERVICE_PROVIDER=custom
       - VPN_TYPE=openvpn
-      - OPENVPN_USER=A4DhMJcDg
-      - OPENVPN_PASSWORD=01KMEC606GGD9Y16CYRRAS7XDQ
+      - OPENVPN_USER=${OPENVPN_USER:?set OPENVPN_USER in .env}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD:?set OPENVPN_PASSWORD in .env}
       - TZ=Europe/Paris
       - OPENVPN_CUSTOM_CONFIG=/gluetun/client.conf
       - DNS_ADDRESS=1.1.1.1 # DNS classiques
@@ -97,6 +97,10 @@ services:
     #- 8097:8096
     container_name: jellyfin
     user: 1000:1000
+    group_add:
+      - "107" # render group on host, needed for /dev/dri/renderD128 (VAAPI/QSV)
+    devices:
+      - /dev/dri:/dev/dri
     network_mode: "host"
     volumes:
       - ./docker-config/jellyfin/config:/config
@@ -105,9 +109,6 @@ services:
         source: ../
         target: /media
     restart: "unless-stopped"
-    # Optional - alternative address used for autodiscovery
-    environment:
-      - JELLYFIN_PublishedServerUrl=http://example.com
     # Optional - may be necessary for docker healthcheck to pass if running in host network mode
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -118,7 +119,7 @@ services:
     container_name: postgres
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=ujc0tpw.ZQE6dbr8kwy
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       - POSTGRES_DB=jellystat
     volumes:
       - ./docker-config/postgres:/var/lib/postgresql/data
@@ -131,12 +132,12 @@ services:
       - 3001:3000
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=ujc0tpw.ZQE6dbr8kwy
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       - POSTGRES_IP=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=jellystat
       - TZ=Europe/Paris
-      - JWT_SECRET=dlkfjgblksjnclkjfdgndflkjgndflkjfnlkzgnerlkjgndkjn
+      - JWT_SECRET=${JELLYSTAT_JWT_SECRET:?set JELLYSTAT_JWT_SECRET in .env}
     depends_on:
       - postgres
     restart: always
@@ -165,7 +166,7 @@ services:
     build: ./hub
     container_name: synarr-hub
     environment:
-      - BETTER_AUTH_SECRET=dlkfjgblksjnclkjfdgndflkjgndflkjfnlkzgnerlkjgndkjn
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
       - BETTER_AUTH_URL=http://localhost
       - DATABASE_PATH=/app/db/auth.db
     volumes:
