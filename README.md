@@ -212,7 +212,7 @@ The domain must be on Cloudflare. Do these steps in the Cloudflare Zero Trust da
    docker compose up -d radarr sonarr prowlarr bazarr seerr
    ```
    It sets `/radarr`, `/sonarr`, `/prowlarr`, `/bazarr` and points Bazarr and Seerr at the new Radarr and Sonarr paths.
-7. **Prowlarr** (Settings > Apps > Radarr and Sonarr): Prowlarr Server `http://localhost:9696/prowlarr`, Radarr Server `http://localhost:7878/radarr`, Sonarr Server `http://localhost:8989/sonarr`. Test, Save, then System > Tasks > Application Indexer Sync.
+7. **Prowlarr** (Settings > Apps > Radarr and Sonarr): Prowlarr Server `http://localhost:9696/prowlarr`, Radarr Server `http://localhost:7878/radarr`, Sonarr Server `http://localhost:8989/sonarr`. Set **Sync Level = Full Sync** (otherwise the indexers already inside Radarr and Sonarr keep the old Prowlarr URL), Test, Save, then System > Tasks > Application Indexer Sync. Check with Settings > Indexers > Test All in Radarr and in Sonarr.
 8. **Tailscale Funnel off** once Jellyfin works through the tunnel: `tailscale funnel status`, then `tailscale funnel reset`.
 
 Tests for the proxy rules: `bash bin/test-caddy.sh` (needs Docker).
