@@ -18,10 +18,10 @@
       <!-- Navigation -->
       <nav class="nav-links" aria-label="Services">
         <span class="nav-section-label">Services</span>
-        <NuxtLink
+        <ModuleLink
           v-for="(module, idx) in activeModules"
           :key="module.id"
-          :to="`/s/${module.id}`"
+          :module="module"
           class="nav-item"
           active-class="active"
           :style="`animation-delay: ${idx * 40}ms`"
@@ -30,7 +30,7 @@
             <AppIcon :name="module.id" :size="18" />
           </span>
           <span class="nav-item-label">{{ module.name }}</span>
-        </NuxtLink>
+        </ModuleLink>
 
         <template v-if="activeModules.length === 0">
           <span class="nav-item" style="cursor: default; opacity: 0.5; font-size: 0.8125rem;">
@@ -75,10 +75,10 @@
         <span class="bottom-nav-label">Home</span>
       </NuxtLink>
 
-      <NuxtLink
+      <ModuleLink
         v-for="module in mobileNavModules"
         :key="module.id"
-        :to="`/s/${module.id}`"
+        :module="module"
         class="bottom-nav-item"
         active-class="active"
       >
@@ -86,7 +86,7 @@
           <AppIcon :name="module.id" :size="22" />
         </span>
         <span class="bottom-nav-label">{{ module.shortName || module.name }}</span>
-      </NuxtLink>
+      </ModuleLink>
 
       <!-- More button when there are extra modules -->
       <button
@@ -116,10 +116,10 @@
         <div class="more-sheet-content">
           <div class="more-sheet-handle" aria-hidden="true"></div>
           <span class="more-sheet-title">All Services</span>
-          <NuxtLink
+          <ModuleLink
             v-for="module in overflowModules"
             :key="module.id"
-            :to="`/s/${module.id}`"
+            :module="module"
             class="more-sheet-item"
             active-class="active"
             @click="showMoreSheet = false"
@@ -128,7 +128,7 @@
               <AppIcon :name="module.id" :size="20" />
             </span>
             <span class="more-sheet-item-label">{{ module.name }}</span>
-          </NuxtLink>
+          </ModuleLink>
         </div>
       </div>
     </Transition>

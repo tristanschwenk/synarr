@@ -12,13 +12,15 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest run"
   },
   "dependencies": {
     "nuxt": "4.4.2"
   },
   "devDependencies": {
     "@vite-pwa/nuxt": "1.1.1",
-    "@vueuse/nuxt": "14.2.1"
+    "@vueuse/nuxt": "14.2.1",
+    "vitest": "^3.2.4"
   }
 }

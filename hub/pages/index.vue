@@ -7,10 +7,10 @@
     </header>
 
     <div class="service-grid" role="list">
-      <NuxtLink
+      <ModuleLink
         v-for="(module, idx) in activeModules"
         :key="module.id"
-        :to="`/s/${module.id}`"
+        :module="module"
         class="service-card"
         role="listitem"
         :style="`animation-delay: ${idx * 50}ms`"
@@ -35,7 +35,7 @@
             <path d="M7 7h10v10"/>
           </svg>
         </div>
-      </NuxtLink>
+      </ModuleLink>
     </div>
   </div>
 

@@ -25,19 +25,28 @@
     </div>
 
     <!-- Loading state -->
-    <div v-if="module && module.url && isLoading" class="iframe-loading">
+    <div v-if="module && module.url && !module.openInNewTab && isLoading" class="iframe-loading">
       <div class="spinner" role="status" aria-label="Loading"></div>
       <span>Loading {{ module?.name }}...</span>
     </div>
 
     <!-- Iframe -->
     <iframe
-      v-if="module && module.url"
+      v-if="module && module.url && !module.openInNewTab"
       :src="module.url"
       :title="module.name"
       :style="isLoading ? 'opacity: 0; position: absolute; pointer-events: none;' : 'flex: 1;'"
       @load="isLoading = false"
     />
+
+    <!-- Public app: opens on its own hostname, not in the iframe -->
+    <div v-else-if="module && module.openInNewTab" class="empty-state">
+      <div>
+        <h2>{{ module.name }} opens in a new tab</h2>
+        <p>{{ module.url }}</p>
+      </div>
+      <a :href="module.url" target="_blank" rel="noopener noreferrer" class="btn">Open {{ module.name }}</a>
+    </div>
 
     <!-- Not found -->
     <div v-else class="empty-state">
