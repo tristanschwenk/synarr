@@ -1,89 +1,42 @@
-# Caddyfile
+# Caddyfile for home.tristanschwenk.fr
+#
+# Cloudflare Access is the only authentication in front of the hub and the admin tools.
+# Only the cloudflared container reaches this Caddy: never publish it on a host port.
+# Requests that did not pass Cloudflare Access (no Cf-Access-Jwt-Assertion header) get 403.
+# Tests: bin/test-caddy.sh
 :80 {
-    # --- Public Endpoints (Bypass Auth) ---
-    @public {
-        path /api/auth/* /login /register /_nuxt* /favicon.ico /__vite_ping
-    }
-    handle @public {
-        reverse_proxy hub:3000
-    }
+	# Caddy runs `handle` before a bare `respond`, so the check must be its own `handle`.
+	@no_access not header Cf-Access-Jwt-Assertion *
+	handle @no_access {
+		respond 403
+	}
 
-    # --- Protected Nuxt Hub Pages ---
-    @protected_hub {
-        not path /api/auth/* /login /register /_nuxt* /favicon.ico /__vite_ping /radarr* /sonarr* /transmission* /prowlarr* /bazarr* /seerr* /jellystat*
-    }
-    handle @protected_hub {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy hub:3000
-    }
+	handle /radarr* {
+		reverse_proxy vpn:7878
+	}
 
-    # --- Protected Services ---
+	handle /sonarr* {
+		reverse_proxy vpn:8989
+	}
 
-    # Radarr
-    handle /radarr* {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy vpn:7878
-    }
+	handle /prowlarr* {
+		reverse_proxy vpn:9696
+	}
 
-    # Sonarr
-    handle /sonarr* {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy vpn:8989
-    }
+	handle /bazarr* {
+		reverse_proxy vpn:6767
+	}
 
-    # Transmission (Inject Basic Auth: admin/admin placeholder)
-    handle /transmission* {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy vpn:9091 {
-            header_up Authorization "Basic YWRtaW46YWRtaW4="
-        }
-    }
+	# RPC authentication is off in Transmission's settings.json.
+	handle /transmission* {
+		reverse_proxy vpn:9091
+	}
 
-    # Prowlarr
-    handle /prowlarr* {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy vpn:9696
-    }
+	handle /jellystat* {
+		reverse_proxy jellystat:3000
+	}
 
-    # Bazarr
-    handle /bazarr* {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy vpn:6767
-    }
-
-    # Overseerr / Seerr
-    handle /seerr* {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy seerr:5055
-    }
-
-    # Jellystat
-    handle /jellystat* {
-        forward_auth hub:3000 {
-            uri /api/auth/verify
-            copy_headers X-Forwarded-User
-        }
-        reverse_proxy jellystat:3000
-    }
+	handle {
+		reverse_proxy hub:3000
+	}
 }
