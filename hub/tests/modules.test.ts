@@ -8,6 +8,11 @@ describe('migrateModules', () => {
     expect(migrateModules(null, DEFAULT_MODULES)).toEqual(DEFAULT_MODULES)
   })
 
+  it('corrupt stored value (not an array) -> returns defaults', () => {
+    expect(migrateModules({} as any, DEFAULT_MODULES)).toEqual(DEFAULT_MODULES)
+    expect(migrateModules('oops' as any, DEFAULT_MODULES)).toEqual(DEFAULT_MODULES)
+  })
+
   it('stored jellyfin with url "/jellyfin" -> public URL, new tab, active kept', () => {
     const stored = [{ id: 'jellyfin', name: 'Jellyfin', url: '/jellyfin', active: false, useCustomUrl: false, customUrl: '' }]
     const jf = find(migrateModules(stored, DEFAULT_MODULES), 'jellyfin')

@@ -37,7 +37,7 @@ const PUBLIC_APPS = new Set(['jellyfin', 'seerr'])
  * point at `/<id>`. Modules missing from storage are appended from the defaults.
  */
 export function migrateModules(stored: Partial<Module>[] | null, defaults: Module[]): Module[] {
-  if (!stored) return defaults.map(m => ({ ...m }))
+  if (!Array.isArray(stored)) return defaults.map(m => ({ ...m }))
 
   const migrated = stored
     .filter((m): m is Partial<Module> & { id: string } => typeof m?.id === 'string')
