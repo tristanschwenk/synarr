@@ -24,7 +24,7 @@ The owner wants:
 
 1. Cloudflare Tunnel is the only way in from the internet. The router keeps every port
    closed.
-2. `jellyfin.tristanschwenk.fr` and `requests.tristanschwenk.fr` (Seerr) are public
+2. `jellyfin.tristanschwenk.fr` and `seerr.tristanschwenk.fr` (Seerr) are public
    through the tunnel, with no Cloudflare login. Jellyfin accounts protect both. Native
    Jellyfin apps work.
 3. `home.tristanschwenk.fr` serves the hub and every admin tool under paths
@@ -97,7 +97,7 @@ The owner wants:
 ```
 Internet -> Cloudflare edge -> tunnel -> cloudflared (synarr stack)
    jellyfin.tristanschwenk.fr  -> Jellyfin (host network, port 8096)   [no Access]
-   requests.tristanschwenk.fr  -> seerr:5055                           [no Access]
+   seerr.tristanschwenk.fr  -> seerr:5055                           [no Access]
    home.tristanschwenk.fr      -> caddy:80 -> hub / tools by path      [Access: owner only]
 ```
 
@@ -132,7 +132,7 @@ Internet -> Cloudflare edge -> tunnel -> cloudflared (synarr stack)
 - A Bypass policy (or a separate Access application) for the PWA files that browsers
   fetch without cookies: the web manifest and the icons. Nothing else bypasses.
 - Safety net against forgotten hostnames: a wildcard Access application on
-  `*.tristanschwenk.fr` that allows the owner only, with `jellyfin.` and `requests.`
+  `*.tristanschwenk.fr` that allows the owner only, with `jellyfin.` and `seerr.`
   as their own applications set to Bypass (more specific applications win). Any new
   hostname is then locked by default.
 - No Access on the email-related records (they are DNS-only and not tunneled).
@@ -146,7 +146,7 @@ Internet -> Cloudflare edge -> tunnel -> cloudflared (synarr stack)
   UI needs a name; never use it for authorization (Access already did that).
 - Module defaults: Radarr, Sonarr, Prowlarr, Bazarr, Transmission, Jellystat stay as
   relative paths in the iframe. Jellyfin (`https://jellyfin.tristanschwenk.fr`) and
-  Seerr (`https://requests.tristanschwenk.fr`) open in a new tab instead of the iframe
+  Seerr (`https://seerr.tristanschwenk.fr`) open in a new tab instead of the iframe
   (a new per-module flag, for example `openInNewTab`).
   Existing localStorage entries with `/jellyfin` or `/seerr` must migrate to the new
   URLs. Home Assistant stays as a custom LAN URL (works only at home).
@@ -170,13 +170,13 @@ Internet -> Cloudflare edge -> tunnel -> cloudflared (synarr stack)
   or equivalent) to `https://jellyfin.tristanschwenk.fr`, add Cloudflare's tunnel as
   a known proxy if Jellyfin needs it to log real client IPs. Owner keeps the only
   admin account; family accounts are non-admin with strong passwords.
-- Seerr: application URL set to `https://requests.tristanschwenk.fr`, sign-in with
+- Seerr: application URL set to `https://seerr.tristanschwenk.fr`, sign-in with
   Jellyfin only (local accounts off).
 
 ### Rollout
 
 1. Create the tunnel and token, add `cloudflared` to compose, publish
-   `jellyfin.` and `requests.` first. Check playback from a phone on mobile data and
+   `jellyfin.` and `seerr.` first. Check playback from a phone on mobile data and
    from an Apple TV app.
 2. Create the Access applications (wildcard lock, `home.` owner-only, bypasses).
 3. Ship the hub without Better Auth and the new Caddyfile; publish `home.`.
@@ -189,7 +189,7 @@ Internet -> Cloudflare edge -> tunnel -> cloudflared (synarr stack)
 
 - The owner performs every Cloudflare dashboard step (tunnel, hostnames, Access apps).
   The plan gives step-by-step instructions with a check after each.
-- Only `home.`, `jellyfin.` and `requests.` are tunneled. The apex and `www` (Infomaniak
+- Only `home.`, `jellyfin.` and `seerr.` are tunneled. The apex and `www` (Infomaniak
   hosting) and all email records stay DNS-only and outside Access. The wildcard Access
   app does not apply to DNS-only records.
 - Devices at home keep using Jellyfin's LAN address; no split DNS. Only devices outside
