@@ -1,33 +1,26 @@
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Install compilation tools for native node modules (like better-sqlite3)
-RUN apk add --no-cache python3 make g++
-
-COPY package*.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
 RUN npm run build
 
-# Stage 2: Run
-FROM node:20-alpine
+# Stage 2: Run (Nitro output is self-contained)
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Copy production artifacts and node_modules for native dependencies (better-sqlite3)
 COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-
-# Make sure SQLite db directory exists inside the container
-RUN mkdir -p /app/db
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOST=0.0.0.0
 ENV NODE_ENV=production
+
+USER node
 
 CMD ["node", ".output/server/index.mjs"]

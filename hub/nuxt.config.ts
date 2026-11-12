@@ -59,5 +59,5 @@ export default defineNuxtConfig({
     '~/assets/css/main.css'
   ],
 
-  devtools: { enabled: true }
+  devtools: { enabled: false }
 })
