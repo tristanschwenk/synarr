@@ -182,20 +182,13 @@ services:
   hub:
     build: ./hub
     container_name: synarr-hub
-    environment:
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
-      - BETTER_AUTH_URL=http://localhost
-      - DATABASE_PATH=/app/db/auth.db
-    volumes:
-      - ./docker-config/hub/db:/app/db
     restart: always
 
   # --- PROXY ---
   caddy:
     image: caddy:2-alpine
     container_name: proxy
-    ports:
-      - 80:80
+    # No published port: only cloudflared reaches Caddy, through Cloudflare Access.
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -221,6 +214,24 @@ services:
       - /media/raid/storage/TVshows:/data/media/old-seriesa
     depends_on:
       - vpn
+    restart: always
+
+  # --- TUNNEL (only way in from the internet, no router port) ---
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.6
+    container_name: synarr-cloudflared
+    command: tunnel --no-autoupdate run
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    # Jellyfin runs on the host network: reach it through the host gateway.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - caddy
+      - seerr
     restart: always
 
 volumes:
