@@ -67,6 +67,14 @@ check GET  /                               no  403
 check GET  /radarr/api/v3/system/status    no  403
 check POST /transmission/rpc               no  403
 check GET  /jellystat/                     no  403
+# PWA files: Cloudflare Access bypasses them, so they arrive without the header.
+check GET  /manifest.webmanifest           no  200 hub
+check GET  /sw.js                          no  200 hub
+check GET  /workbox-4b126c97.js            no  200 hub
+check GET  /icon-192x192.png               no  200 hub
+check GET  /icon-512x512.png               no  200 hub
+check GET  /favicon.ico                    no  200 hub
+check GET  /radarr/manifest.webmanifest    no  403
 check GET  /                               yes 200 hub
 check GET  /radarr/                        yes 200 vpn-7878
 check GET  /sonarr/                        yes 200 vpn-8989

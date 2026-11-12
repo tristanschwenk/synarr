@@ -5,6 +5,15 @@
 # Requests that did not pass Cloudflare Access (no Cf-Access-Jwt-Assertion header) get 403.
 # Tests: bin/test-caddy.sh
 :80 {
+	# PWA files are public: Cloudflare Access bypasses them (browsers fetch them without
+	# cookies), so they arrive without the Access header. Only these exact hub paths.
+	@pwa path /manifest.webmanifest /sw.js /workbox-*.js /icon-192x192.png /icon-512x512.png /favicon.ico
+	handle @pwa {
+		reverse_proxy hub:3000
+	}
+
+	# Only checks that the header exists (cloudflared's own JWT check would also block the
+	# bypassed PWA files). Safe because nothing but cloudflared can reach this Caddy.
 	# Caddy runs `handle` before a bare `respond`, so the check must be its own `handle`.
 	@no_access not header Cf-Access-Jwt-Assertion *
 	handle @no_access {
