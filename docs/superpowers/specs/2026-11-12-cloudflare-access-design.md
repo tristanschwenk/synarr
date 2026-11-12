@@ -197,6 +197,10 @@ Internet -> Cloudflare edge -> tunnel -> cloudflared (synarr stack)
 - The server's uncommitted compose edits (Watchtower labels, extra Sonarr volume) are
   folded into the repo first, so deploys are a plain `git pull`. `cloudflared`, `caddy`
   and the hub get no Watchtower label (updates by hand).
+- Owner's decision: Bazarr mounts `/media/raid/storage/TVshows` at
+  `/data/media/old-seriesa`, the same path Sonarr uses (Sonarr's root folder is
+  `/data/media/old-seriesa/`). Sonarr is not changed. This fixes Bazarr not finding old
+  series files at the paths Sonarr reports.
 
 ## Risks
 
