@@ -153,6 +153,8 @@ services:
       - POSTGRES_DB=jellystat
       - TZ=Europe/Paris
       - JWT_SECRET=${JELLYSTAT_JWT_SECRET:?set JELLYSTAT_JWT_SECRET in .env}
+      # Served under hub.<domain>/jellystat; on the LAN: http://<server-ip>:3001/jellystat/
+      - JS_BASE_URL=/jellystat
     depends_on:
       - postgres
     restart: always

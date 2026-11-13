@@ -72,6 +72,22 @@ check() { # method path expected_status expected_body
   fi
 }
 
+check_redirect() { # path expected_location
+  local path="$1" want="$2" got
+  got="$(curl -s -o /dev/null -w "%{http_code} %header{location}" "http://127.0.0.1:$PORT$path")"
+  if [[ "$got" != "308 $want" ]]; then
+    echo "FAIL GET $path: got '$got', want '308 $want'"
+    fail=1
+  else
+    echo "ok   GET $path -> $got"
+  fi
+}
+
+# Bazarr and Jellystat answer the bare path with an absolute http:// redirect, which the
+# https hub blocks. Caddy redirects to the trailing slash itself, with a relative Location.
+check_redirect /bazarr                     /bazarr/
+check_redirect /jellystat                  /jellystat/
+
 check GET  /                               200 hub
 check GET  /manifest.webmanifest           200 hub
 check GET  /radarr/                        200 vpn-7878

@@ -2,6 +2,11 @@
 # Only tailnet devices reach this Caddy (the DNS record points at the server's Tailscale IP).
 # Tests: bin/test-caddy.sh
 
+# Bazarr and Jellystat answer the bare path with an absolute http:// redirect. Port 80 is
+# another service and the https hub blocks http frames, so redirect here, relative.
+redir /bazarr /bazarr/ 308
+redir /jellystat /jellystat/ 308
+
 handle /radarr* {
 	reverse_proxy vpn:7878
 }

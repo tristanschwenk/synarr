@@ -184,7 +184,7 @@ docker compose up -d
 
 Admin tools under `hub.`: `/radarr`, `/sonarr`, `/prowlarr`, `/bazarr`, `/transmission`, `/jellystat`.
 
-On the home network and the owner's tailnet, the tools stay reachable **without a login** at `http://<server-ip>:7878/radarr`, `:8989/sonarr`, `:9696/prowlarr`, `:6767/bazarr`, `:9091/transmission/web/`, `:3001` (Jellystat), `:5055` (Seerr). This is deliberate. Never forward these ports on the router.
+On the home network and the owner's tailnet, the tools stay reachable **without a login** at `http://<server-ip>:7878/radarr`, `:8989/sonarr`, `:9696/prowlarr`, `:6767/bazarr`, `:9091/transmission/web/`, `:3001/jellystat/` (Jellystat), `:5055` (Seerr). This is deliberate. Never forward these ports on the router.
 
 ---
 
