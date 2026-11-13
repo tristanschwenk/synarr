@@ -1,4 +1,4 @@
-# Routes for home.tristanschwenk.fr, imported by caddy/Caddyfile.
+# Routes for hub.tristanschwenk.fr, imported by caddy/Caddyfile.
 # Only tailnet devices reach this Caddy (the DNS record points at the server's Tailscale IP).
 # Tests: bin/test-caddy.sh
 

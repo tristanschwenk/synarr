@@ -240,3 +240,5 @@ Owner's decision: the hub and the admin tools are reachable only over Tailscale.
 - Access keeps the Bypass apps for `jellyfin.` and `seerr.` and the `*.` lock-by-default
   app. The `home.` Access apps are dropped.
 - Tailscale Funnel must be off, because it holds port 443 on the Tailscale IP.
+- The owner named the record `hub.tristanschwenk.fr`, not `home.`. Everything above that
+  says `home.` now means `hub.`.

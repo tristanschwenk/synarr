@@ -188,7 +188,7 @@ services:
   caddy:
     build: ./caddy
     container_name: proxy
-    # home.tristanschwenk.fr points at the server's Tailscale IP (DNS-only record), so only
+    # hub.tristanschwenk.fr points at the server's Tailscale IP (DNS-only record), so only
     # tailnet devices reach this port. The router does not forward it.
     ports:
       - "443:443"
