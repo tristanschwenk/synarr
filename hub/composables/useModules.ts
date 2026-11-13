@@ -36,7 +36,7 @@ export const useModules = () => {
         }
       } else {
         const base = serverAddress.value && serverAddress.value !== '/' ? serverAddress.value : ''
-        updatedModule.url = `${base}/${updatedModule.id}`
+        updatedModule.url = `${base}/${updatedModule.id}/`
       }
       
       modules.value[index] = updatedModule

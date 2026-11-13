@@ -30,11 +30,19 @@ describe('migrateModules', () => {
     expect(seerr.name).toBe('Seerr')
   })
 
-  it('stored radarr without openInNewTab -> iframe module at /radarr', () => {
+  it('stored radarr without openInNewTab -> iframe module at /radarr/', () => {
     const stored = [{ id: 'radarr', name: 'Radarr', url: '/radarr', active: true, useCustomUrl: false, customUrl: '' }]
     const radarr = find(migrateModules(stored, DEFAULT_MODULES), 'radarr')
     expect(radarr.openInNewTab).toBe(false)
-    expect(radarr.url).toBe('/radarr')
+    expect(radarr.url).toBe('/radarr/')
+  })
+
+  // Bazarr once answered /bazarr with a permanent redirect to http://, which browsers
+  // cache. Linking to the trailing slash never hits that redirect.
+  it('relative tool URLs end with a slash', () => {
+    const relative = DEFAULT_MODULES.filter(m => m.url.startsWith('/'))
+    expect(relative.length).toBeGreaterThan(0)
+    for (const m of relative) expect(m.url).toBe(`/${m.id}/`)
   })
 
   it('stored homeassistant custom URL -> unchanged', () => {
