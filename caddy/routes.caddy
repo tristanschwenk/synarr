@@ -28,7 +28,10 @@ handle /transmission* {
 	reverse_proxy vpn:9091
 }
 
-handle /jellystat* {
+# Jellystat's page loads its bundle from /assets/ at the root, even with JS_BASE_URL.
+# The hub (Nuxt) serves its own files under /_nuxt/ and never uses /assets/.
+@jellystat path /jellystat* /assets/*
+handle @jellystat {
 	reverse_proxy jellystat:3000
 }
 

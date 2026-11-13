@@ -99,5 +99,8 @@ check GET  /transmission/web/              200 vpn-9091
 check POST /transmission/rpc               200 vpn-9091
 check GET  /jellystat/                     200 jellystat
 check GET  /seerr/                         200 hub
+# Jellystat's page loads its bundle from /assets/ at the root; the hub never uses /assets/.
+check GET  /assets/index-DZH55QAA.js       200 jellystat
+check GET  /_nuxt/entry.js                 200 hub
 
 exit "$fail"
