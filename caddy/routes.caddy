@@ -1,0 +1,32 @@
+# Routes for home.tristanschwenk.fr, imported by caddy/Caddyfile.
+# Only tailnet devices reach this Caddy (the DNS record points at the server's Tailscale IP).
+# Tests: bin/test-caddy.sh
+
+handle /radarr* {
+	reverse_proxy vpn:7878
+}
+
+handle /sonarr* {
+	reverse_proxy vpn:8989
+}
+
+handle /prowlarr* {
+	reverse_proxy vpn:9696
+}
+
+handle /bazarr* {
+	reverse_proxy vpn:6767
+}
+
+# RPC authentication is off in Transmission's settings.json.
+handle /transmission* {
+	reverse_proxy vpn:9091
+}
+
+handle /jellystat* {
+	reverse_proxy jellystat:3000
+}
+
+handle {
+	reverse_proxy hub:3000
+}

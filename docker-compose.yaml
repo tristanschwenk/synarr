@@ -186,11 +186,18 @@ services:
 
   # --- PROXY ---
   caddy:
-    image: caddy:2-alpine
+    build: ./caddy
     container_name: proxy
-    # No published port: only cloudflared reaches Caddy, through Cloudflare Access.
+    # home.tristanschwenk.fr points at the server's Tailscale IP (DNS-only record), so only
+    # tailnet devices reach this port. The router does not forward it.
+    ports:
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN in .env}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/routes.caddy:/etc/caddy/routes.caddy:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
@@ -230,7 +237,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - caddy
       - seerr
     restart: always
 

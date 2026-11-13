@@ -224,3 +224,19 @@ Internet -> Cloudflare edge -> tunnel -> cloudflared (synarr stack)
   setup and record it in the README.
 - Whether JWT validation lives in Caddy or the hub.
 - Exact package versions for the hub.
+
+## Amendment 2026-11-13: `home.` over Tailscale instead of Cloudflare Access
+
+Owner's decision: the hub and the admin tools are reachable only over Tailscale.
+
+- `home.tristanschwenk.fr` is a DNS-only `A` record pointing at the server's Tailscale IP
+  (`100.82.243.124`). It is not routed through the tunnel. The tunnel carries only
+  `jellyfin.` and `seerr.`.
+- Caddy publishes host port 443 (port 80 belongs to another service, so no HTTP redirect)
+  and gets its Let's Encrypt certificate through the DNS challenge, with a custom build
+  that includes `caddy-dns/cloudflare` and a zone-scoped `CLOUDFLARE_API_TOKEN` in `.env`.
+- The Caddy check on `Cf-Access-Jwt-Assertion` and the PWA exceptions are removed:
+  Tailscale is the lock. Routes live in `caddy/routes.caddy`.
+- Access keeps the Bypass apps for `jellyfin.` and `seerr.` and the `*.` lock-by-default
+  app. The `home.` Access apps are dropped.
+- Tailscale Funnel must be off, because it holds port 443 on the Tailscale IP.

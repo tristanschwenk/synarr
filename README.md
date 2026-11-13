@@ -8,13 +8,13 @@
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/Nuxt_3-Hub-00DC82?style=flat&logo=nuxtdotjs&logoColor=white" alt="Nuxt 3" />
   <img src="https://img.shields.io/badge/Gluetun-VPN_Sidecar-009688?style=flat&logo=wireguard&logoColor=white" alt="VPN" />
-  <img src="https://img.shields.io/badge/Cloudflare-Tunnel_%2B_Access-F38020?style=flat&logo=cloudflare&logoColor=white" alt="Cloudflare" />
+  <img src="https://img.shields.io/badge/Cloudflare-Tunnel-F38020?style=flat&logo=cloudflare&logoColor=white" alt="Cloudflare" />
   <img src="https://img.shields.io/badge/Jellyfin-Streaming-00A4DC?style=flat&logo=jellyfin&logoColor=white" alt="Jellyfin" />
 </p>
 
 ---
 
-**Synarr** is a production-ready, fully automated, self-hosted media center. It brings together the complete **Servarr** ecosystem (`Radarr`, `Sonarr`, `Prowlarr`, `Bazarr`, `Overseerr/Seerr`), a torrent client (`Transmission`), an analytics engine (`Jellystat`), and a streaming server (`Jellyfin`), reachable from anywhere through a **Cloudflare Tunnel** (no router port), with the admin tools behind one **Cloudflare Access** login and a Nuxt PWA hub, and secured via a **Gluetun VPN Sidecar**.
+**Synarr** is a production-ready, fully automated, self-hosted media center. It brings together the complete **Servarr** ecosystem (`Radarr`, `Sonarr`, `Prowlarr`, `Bazarr`, `Overseerr/Seerr`), a torrent client (`Transmission`), an analytics engine (`Jellystat`), and a streaming server (`Jellyfin`), with Jellyfin and Seerr public through a **Cloudflare Tunnel** (no router port), the hub and admin tools reachable only over **Tailscale**, a Nuxt PWA hub, and secured via a **Gluetun VPN Sidecar**.
 
 ---
 
@@ -24,14 +24,15 @@
 flowchart TB
     subgraph WAN [Internet / External]
         Client[User Browser / App]
-        CF[Cloudflare Edge + Access]
+        Owner[Owner device on the tailnet]
+        CF[Cloudflare Edge]
         Trackers[Trackers & Indexers]
         Peers[Torrent Swarm]
     end
 
     subgraph SynarrHost [Synarr Server]
         Tunnel[cloudflared]
-        Proxy[Caddy path router, no host port]
+        Proxy[Caddy path router :443]
         Hub[Synarr Nuxt Hub PWA :3000]
 
         subgraph VPNSidecar [Gluetun VPN Gateway Container]
@@ -54,9 +55,9 @@ flowchart TB
 
     Client --> CF
     CF -->|outbound tunnel| Tunnel
-    Tunnel -->|home. after Access login| Proxy
     Tunnel -->|jellyfin. public| Jellyfin
     Tunnel -->|seerr. public| Seerr
+    Owner -->|home. over Tailscale| Proxy
     Proxy --> Hub
     Proxy --> VPNSidecar
     Proxy --> Jellystat
@@ -73,7 +74,7 @@ flowchart TB
 ### Key Highlights
 
 * 🛡️ **Sidecar VPN Gateway**: All acquisition and indexer containers share the network stack of Gluetun (`network_mode: "container:vpn"`). If the VPN drops, all torrent/search traffic immediately halts (built-in killswitch).
-* 🔐 **One login, no open port**: A Cloudflare Tunnel is the only way in from the internet. `home.<domain>` (hub and every admin tool) sits behind one Cloudflare Access login for the owner only; Caddy refuses any request that did not pass Access. Jellyfin and Seerr are public with their own Jellyfin accounts, so the TV and phone apps work.
+* 🔐 **No open port**: A Cloudflare Tunnel is the only way in from the internet, and it carries only Jellyfin and Seerr (public, with their own Jellyfin accounts, so the TV and phone apps work). `home.<domain>` (hub and every admin tool) resolves to the server's Tailscale IP, so only the owner's tailnet devices reach it.
 * ⚡ **Atomic Hardlinks**: A unified single-root dataset (`/data`) allows instant, zero-duplicate moves between downloading (`torrents/`) and your organized streaming library (`media/`).
 * 📱 **Progressive Web App (PWA)**: Access and switch between all services on desktop or mobile through the unified Synarr interface.
 
@@ -93,7 +94,7 @@ flowchart TB
 | **Jellyfin** | Personal media player & streaming server | Host / Direct |
 | **Jellystat** | Jellyfin analytics & watch statistics | Host / Direct |
 | **Synarr Hub** | Dashboard and module launcher (PWA) | Behind Caddy |
-| **Caddy** | Path router for `home.<domain>`, no host port | Behind cloudflared |
+| **Caddy** | Path router and HTTPS for `home.<domain>` (Cloudflare DNS plugin) | Host port 443, tailnet only |
 | **cloudflared** | Cloudflare Tunnel connector (outbound only) | Compose network |
 
 ---
@@ -156,7 +157,7 @@ docker-config/vpn/
 
 ### 4. Set secrets
 
-Secrets (VPN credentials, database password, Jellystat JWT secret, Cloudflare tunnel token) live in a gitignored `.env` file, not in `docker-compose.yaml`:
+Secrets (VPN credentials, database password, Jellystat JWT secret, Cloudflare tunnel token, Cloudflare API token) live in a gitignored `.env` file, not in `docker-compose.yaml`:
 
 ```bash
 cp .env.example .env
@@ -177,43 +178,43 @@ docker compose up -d
 
 | Address | Who | Login |
 | :--- | :--- | :--- |
-| `https://home.tristanschwenk.fr` | Owner only | Cloudflare Access (email code), 1 month |
+| `https://home.tristanschwenk.fr` | Owner only | None: reachable only from the owner's tailnet |
 | `https://jellyfin.tristanschwenk.fr` | Family and friends | Jellyfin account |
 | `https://seerr.tristanschwenk.fr` | Family and friends | Jellyfin account |
 
 Admin tools under `home.`: `/radarr`, `/sonarr`, `/prowlarr`, `/bazarr`, `/transmission`, `/jellystat`.
 
-On the home network and the owner's tailnet, the tools stay reachable **without a login** at `http://<server-ip>:7878/radarr`, `:8989/sonarr`, `:9696/prowlarr`, `:6767/bazarr`, `:9091/transmission/web/`, `:3001` (Jellystat), `:5055` (Seerr). This is deliberate: it is the fallback when the internet or Cloudflare is down. Never forward these ports on the router.
+On the home network and the owner's tailnet, the tools stay reachable **without a login** at `http://<server-ip>:7878/radarr`, `:8989/sonarr`, `:9696/prowlarr`, `:6767/bazarr`, `:9091/transmission/web/`, `:3001` (Jellystat), `:5055` (Seerr). This is deliberate. Never forward these ports on the router.
 
 ---
 
-## ☁️ Remote access (Cloudflare)
+## ☁️ Remote access
 
-The domain must be on Cloudflare. Do these steps in the Cloudflare Zero Trust dashboard, in order.
+Jellyfin and Seerr go through a Cloudflare Tunnel. The hub and admin tools (`home.`) are reachable only over Tailscale. The domain must be on Cloudflare.
 
-1. **Tunnel**: Networks > Tunnels > Create a tunnel > Cloudflared. Copy the token into `.env` as `CLOUDFLARE_TUNNEL_TOKEN` (never commit it). Add public hostnames:
-   * `home.tristanschwenk.fr` → `http://caddy:80`
-   * `jellyfin.tristanschwenk.fr` → `http://host.docker.internal:8096`
+1. **Tunnel** (Zero Trust > Networks > Tunnels > Create a tunnel > Cloudflared). Copy the token from the install command into `.env` as `CLOUDFLARE_TUNNEL_TOKEN` (never commit it), then start the connector so the dashboard sees it: `docker compose up -d --no-deps cloudflared`. Add routes of type **Published application**:
+   * `jellyfin.tristanschwenk.fr` → `http://host.docker.internal:8096` (Jellyfin is on the host network; `localhost` would be the cloudflared container itself)
    * `seerr.tristanschwenk.fr` → `http://seerr:5055`
-2. **Login method**: Settings > Authentication > add **One-time PIN**. Global session duration: **1 month**.
-3. **Access applications** (Access > Applications > Add > Self-hosted), in this order:
+   * Never add `home.` to the tunnel.
+2. **Access applications** (Zero Trust > Access > Applications > Add > Self-hosted). One-time PIN is the login method; it has no settings.
    * `jellyfin.tristanschwenk.fr`: policy action **Bypass**, include **Everyone**.
    * `seerr.tristanschwenk.fr`: **Bypass**, **Everyone**.
-   * `home.tristanschwenk.fr` with paths `manifest.webmanifest`, `sw.js`, `workbox-*.js`, `icon-192x192.png`, `icon-512x512.png`, `favicon.ico`: **Bypass**, **Everyone** (browsers fetch PWA files without cookies).
-   * `home.tristanschwenk.fr`: **Allow**, include **Emails** = the owner's email. Session duration 1 month.
-   * `*.tristanschwenk.fr`: **Allow**, include **Emails** = the owner's email. Safety net: any hostname added later is locked by default.
-   * Check in a private window: `home.` asks for a PIN; `jellyfin.` and `seerr.` do not.
-4. **Jellyfin** (Dashboard > Networking): Published server URIs `all=https://jellyfin.tristanschwenk.fr`. Known proxies: `172.17.0.1` and the compose network gateway (`docker network inspect docker-streaming-manager_default -f '{{(index .IPAM.Config 0).Gateway}}'`). Only the owner's account is admin.
-5. **Seerr**: Settings > General > Application URL `https://seerr.tristanschwenk.fr`. Settings > Users: turn off local sign-in, keep Jellyfin sign-in.
-6. **URL bases**: stop the tools, run the settings script, start them again:
+   * `*.tristanschwenk.fr`: **Allow**, include **Emails** = the owner's email. Safety net: any tunnel hostname added later is locked by default.
+   * Check in a private window: `jellyfin.` and `seerr.` open without a PIN.
+3. **`home.` DNS record** (DNS > Records): `A home 100.82.243.124` (the server's `tailscale ip -4`), **DNS only** (grey cloud). Only tailnet devices can reach that address.
+4. **Cloudflare API token** for Caddy's certificate (Let's Encrypt cannot reach a Tailscale IP, so Caddy uses the DNS challenge): My Profile > API Tokens > Create Token > **Edit zone DNS**, zone `tristanschwenk.fr` only. Put it in `.env` as `CLOUDFLARE_API_TOKEN`. Anyone with this token can edit the zone's DNS, email records included: keep it only in `.env`.
+5. **Tailscale Funnel off**: it holds port 443 on the Tailscale IP. `tailscale funnel status`, then `tailscale funnel reset`.
+6. **Jellyfin** (Dashboard > Networking): Published server URIs `all=https://jellyfin.tristanschwenk.fr`. Known proxies: `172.17.0.1` and the compose network gateway (`docker network inspect docker-streaming-manager_default -f '{{(index .IPAM.Config 0).Gateway}}'`). Only the owner's account is admin.
+7. **Seerr**: Settings > General > Application URL `https://seerr.tristanschwenk.fr`, and turn on **Enable Proxy Support**. Settings > Users: turn off local sign-in, keep Jellyfin sign-in.
+8. **URL bases**: stop the tools, run the settings script, start them again:
    ```bash
    docker compose stop radarr sonarr prowlarr bazarr seerr
    python3 bin/configure-apps.py
    docker compose up -d radarr sonarr prowlarr bazarr seerr
    ```
    It sets `/radarr`, `/sonarr`, `/prowlarr`, `/bazarr` and points Bazarr and Seerr at the new Radarr and Sonarr paths.
-7. **Prowlarr** (Settings > Apps > Radarr and Sonarr): Prowlarr Server `http://localhost:9696/prowlarr`, Radarr Server `http://localhost:7878/radarr`, Sonarr Server `http://localhost:8989/sonarr`. Set **Sync Level = Full Sync** (otherwise the indexers already inside Radarr and Sonarr keep the old Prowlarr URL), Test, Save, then System > Tasks > Application Indexer Sync. Check with Settings > Indexers > Test All in Radarr and in Sonarr.
-8. **Tailscale Funnel off** once Jellyfin works through the tunnel: `tailscale funnel status`, then `tailscale funnel reset`.
+9. **Prowlarr** (Settings > Apps > Radarr and Sonarr): Prowlarr Server `http://localhost:9696/prowlarr`, Radarr Server `http://localhost:7878/radarr`, Sonarr Server `http://localhost:8989/sonarr`. Set **Sync Level = Full Sync** (otherwise the indexers already inside Radarr and Sonarr keep the old Prowlarr URL), Test, Save, then System > Tasks > Application Indexer Sync. Check with Settings > Indexers > Test All in Radarr and in Sonarr.
+10. **Hub and Caddy**: `docker compose up -d --build hub caddy`. From a tailnet device, open `https://home.tristanschwenk.fr`: the certificate must be valid. Host port 80 is not used (another service holds it), so always use `https://`.
 
 Tests for the proxy rules: `bash bin/test-caddy.sh` (needs Docker).
 

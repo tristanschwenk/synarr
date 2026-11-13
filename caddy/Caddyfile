@@ -1,0 +1,21 @@
+# Caddyfile for home.tristanschwenk.fr (hub and admin tools).
+#
+# The DNS record for home.tristanschwenk.fr is DNS-only and points at the server's
+# Tailscale IP, so only devices on the tailnet reach this site. Tailscale is the lock:
+# there is no login in front of the hub and the tools.
+#
+# Let's Encrypt cannot reach a Tailscale IP, so the certificate comes from the DNS
+# challenge through the Cloudflare API (custom build, see caddy/Dockerfile).
+{
+	# Host port 80 belongs to another service: only HTTPS (443) is published.
+	auto_https disable_redirects
+}
+
+home.tristanschwenk.fr {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+		resolvers 1.1.1.1
+	}
+
+	import routes.caddy
+}
